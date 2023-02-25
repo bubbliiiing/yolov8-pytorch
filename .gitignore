@@ -1,3 +1,14 @@
+# ignore map, miou, datasets
+map_out/
+miou_out/
+VOCdevkit/
+datasets/
+Medical_Datasets/
+lfw/
+logs/
+model_data/
+.temp_map_out/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
