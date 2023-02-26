@@ -137,4 +137,4 @@ class YoloBody(nn.Module):
         box, cls        = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2).split((self.reg_max * 4, self.num_classes), 1)
         # origin_cls      = [xi.split((self.reg_max * 4, self.num_classes), 1)[1] for xi in x]
         dbox            = self.dfl(box)
-        return dbox, cls, x, self.anchors, self.strides
+        return dbox, cls, x, self.anchors.to(dbox.device), self.strides.to(dbox.device)

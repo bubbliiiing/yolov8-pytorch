@@ -37,6 +37,7 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callbac
             #   反向传播
             #----------------------#
             loss_value.backward()
+            torch.nn.utils.clip_grad_norm_(model_train.parameters(), max_norm=10.0)  # clip gradients
             optimizer.step()
         else:
             from torch.cuda.amp import autocast
@@ -45,12 +46,14 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callbac
                 #   前向传播
                 #----------------------#
                 outputs         = model_train(images)
-                loss_value      = yolo_loss(outputs, targets, images)
+                loss_value = yolo_loss(outputs, bboxes)
 
             #----------------------#
             #   反向传播
             #----------------------#
             scaler.scale(loss_value).backward()
+            scaler.unscale_(optimizer)  # unscale gradients
+            torch.nn.utils.clip_grad_norm_(model_train.parameters(), max_norm=10.0)  # clip gradients
             scaler.step(optimizer)
             scaler.update()
         if ema:
@@ -89,8 +92,8 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callbac
             #----------------------#
             #   前向传播
             #----------------------#
-            outputs         = model_train_eval(images)
-            loss_value      = yolo_loss(outputs, targets, images)
+            outputs     = model_train_eval(images)
+            loss_value  = yolo_loss(outputs, bboxes)
 
         val_loss += loss_value.item()
         if local_rank == 0:

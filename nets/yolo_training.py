@@ -332,6 +332,7 @@ class Loss:
                 if n:
                     out[j, :n] = targets[matches, 1:]
             out[..., 1:5] = xywh2xyxy(out[..., 1:5].mul_(scale_tensor))
+            print(out)
         return out
 
     def bbox_decode(self, anchor_points, pred_dist):
@@ -385,8 +386,7 @@ class Loss:
         loss[0] *= 7.5  # box gain
         loss[1] *= 0.5  # cls gain
         loss[2] *= 1.5  # dfl gain
-        print(loss)
-        return loss.sum() * batch_size # loss(box, cls, dfl)
+        return loss.sum() # loss(box, cls, dfl) # * batch_size
 
 def is_parallel(model):
     # Returns True if model is of type DP or DDP
