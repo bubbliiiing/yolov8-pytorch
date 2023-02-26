@@ -332,7 +332,6 @@ class Loss:
                 if n:
                     out[j, :n] = targets[matches, 1:]
             out[..., 1:5] = xywh2xyxy(out[..., 1:5].mul_(scale_tensor))
-            print(out)
         return out
 
     def bbox_decode(self, anchor_points, pred_dist):
