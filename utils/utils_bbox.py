@@ -29,9 +29,10 @@ def make_anchors(feats, strides, grid_cell_offset=0.5):
 
 def dist2bbox(distance, anchor_points, xywh=True, dim=-1):
     """Transform distance(ltrb) to box(xywh or xyxy)."""
-    lt, rb = torch.split(distance, 2, dim)
-    x1y1 = anchor_points - lt
-    x2y2 = anchor_points + rb
+    # 左上右下
+    lt, rb  = torch.split(distance, 2, dim)
+    x1y1    = anchor_points - lt
+    x2y2    = anchor_points + rb
     if xywh:
         c_xy = (x1y1 + x2y2) / 2
         wh = x2y2 - x1y1
@@ -46,9 +47,13 @@ class DecodeBox():
         self.input_shape    = input_shape
         
     def decode_box(self, inputs):
+        # dbox  batch_size, 4, 8400
+        # cls   batch_size, 20, 8400
         dbox, cls, origin_cls, anchors, strides = inputs
-        dbox = dist2bbox(dbox, anchors.unsqueeze(0), xywh=True, dim=1) * strides
-        y = torch.cat((dbox, cls.sigmoid()), 1).permute(0, 2, 1)
+        # 获得中心宽高坐标
+        dbox    = dist2bbox(dbox, anchors.unsqueeze(0), xywh=True, dim=1) * strides
+        y       = torch.cat((dbox, cls.sigmoid()), 1).permute(0, 2, 1)
+        # 进行归一化，到0~1之间
         y[:, :, :4] = y[:, :, :4] / torch.Tensor([self.input_shape[1], self.input_shape[0], self.input_shape[1], self.input_shape[0]]).to(y.device)
         return y
 
@@ -114,8 +119,8 @@ class DecodeBox():
             if not image_pred.size(0):
                 continue
             #-------------------------------------------------------------------------#
-            #   detections  [num_anchors, 7]
-            #   7的内容为：x1, y1, x2, y2, obj_conf, class_conf, class_pred
+            #   detections  [num_anchors, 6]
+            #   6的内容为：x1, y1, x2, y2, class_conf, class_pred
             #-------------------------------------------------------------------------#
             detections = torch.cat((image_pred[:, :4], class_conf.float(), class_pred.float()), 1)
 
