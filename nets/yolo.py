@@ -5,6 +5,29 @@ import torch.nn as nn
 from nets.backbone import Backbone, C2f, Conv, SiLU, autopad
 from utils.utils_bbox import make_anchors
 
+def fuse_conv_and_bn(conv, bn):
+    # Fuse Conv2d() and BatchNorm2d() layers https://tehnokv.com/posts/fusing-batchnorm-and-conv/
+    fusedconv = nn.Conv2d(conv.in_channels,
+                          conv.out_channels,
+                          kernel_size=conv.kernel_size,
+                          stride=conv.stride,
+                          padding=conv.padding,
+                          dilation=conv.dilation,
+                          groups=conv.groups,
+                          bias=True).requires_grad_(False).to(conv.weight.device)
+
+    # Prepare filters
+    w_conv = conv.weight.clone().view(conv.out_channels, -1)
+    w_bn = torch.diag(bn.weight.div(torch.sqrt(bn.eps + bn.running_var)))
+    fusedconv.weight.copy_(torch.mm(w_bn, w_conv).view(fusedconv.weight.shape))
+
+    # Prepare spatial bias
+    b_conv = torch.zeros(conv.weight.size(0), device=conv.weight.device) if conv.bias is None else conv.bias
+    b_bn = bn.bias - bn.weight.mul(bn.running_mean).div(torch.sqrt(bn.running_var + bn.eps))
+    fusedconv.bias.copy_(torch.mm(w_bn, b_conv.reshape(-1, 1)).reshape(-1) + b_bn)
+
+    return fusedconv
+
 class DFL(nn.Module):
     # Integral module of Distribution Focal Loss (DFL) proposed in Generalized Focal Loss https://ieeexplore.ieee.org/document/9792391
     def __init__(self, c1=16):
@@ -77,16 +100,14 @@ class YoloBody(nn.Module):
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
 
-    # def fuse(self):
-    #     print('Fusing layers... ')
-    #     for m in self.modules():
-    #         if isinstance(m, RepConv):
-    #             m.fuse_repvgg_block()
-    #         elif type(m) is Conv and hasattr(m, 'bn'):
-    #             m.conv = fuse_conv_and_bn(m.conv, m.bn)
-    #             delattr(m, 'bn')
-    #             m.forward = m.fuseforward
-    #     return self
+    def fuse(self):
+        print('Fusing layers... ')
+        for m in self.modules():
+            if type(m) is Conv and hasattr(m, 'bn'):
+                m.conv = fuse_conv_and_bn(m.conv, m.bn)  # update conv
+                delattr(m, 'bn')  # remove batchnorm
+                m.forward = m.forward_fuse  # update forward
+        return self
     
     def forward(self, x):
         #  backbone
