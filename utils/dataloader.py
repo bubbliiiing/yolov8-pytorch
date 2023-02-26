@@ -10,14 +10,12 @@ from utils.utils import cvtColor, preprocess_input
 
 
 class YoloDataset(Dataset):
-    def __init__(self, annotation_lines, input_shape, num_classes, anchors, anchors_mask, epoch_length, \
+    def __init__(self, annotation_lines, input_shape, num_classes, epoch_length, \
                         mosaic, mixup, mosaic_prob, mixup_prob, train, special_aug_ratio = 0.7):
         super(YoloDataset, self).__init__()
         self.annotation_lines   = annotation_lines
         self.input_shape        = input_shape
         self.num_classes        = num_classes
-        self.anchors            = anchors
-        self.anchors_mask       = anchors_mask
         self.epoch_length       = epoch_length
         self.mosaic             = mosaic
         self.mosaic_prob        = mosaic_prob

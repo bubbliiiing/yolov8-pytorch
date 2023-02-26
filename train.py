@@ -17,7 +17,7 @@ from nets.yolo_training import (ModelEMA, get_lr_scheduler, Loss,
                                 set_optimizer_lr, weights_init)
 from utils.callbacks import EvalCallback, LossHistory
 from utils.dataloader import YoloDataset, yolo_dataset_collate
-from utils.utils import download_weights, get_anchors, get_classes, show_config
+from utils.utils import download_weights, get_classes, show_config
 from utils.utils_fit import fit_one_epoch
 
 '''
@@ -68,12 +68,6 @@ if __name__ == "__main__":
     #                   训练前一定要修改classes_path，使其对应自己的数据集
     #---------------------------------------------------------------------#
     classes_path    = 'model_data/voc_classes.txt'
-    #---------------------------------------------------------------------#
-    #   anchors_path    代表先验框对应的txt文件，一般不修改。
-    #   anchors_mask    用于帮助代码找到对应的先验框，一般不修改。
-    #---------------------------------------------------------------------#
-    anchors_path    = 'model_data/yolo_anchors.txt'
-    anchors_mask    = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
     #----------------------------------------------------------------------------------------------------------------------------#
     #   权值文件的下载请看README，可以通过网盘下载。模型的 预训练权重 对不同数据集是通用的，因为特征是通用的。
     #   模型的 预训练权重 比较重要的部分是 主干特征提取网络的权值部分，用于进行特征提取。
@@ -99,9 +93,12 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     input_shape     = [640, 640]
     #------------------------------------------------------#
-    #   phi             所使用到的yolov7的版本，本仓库一共提供两个：
-    #                   l : 对应yolov7
-    #                   x : 对应yolov7_x
+    #   phi             所使用到的yolov8的版本
+    #                   n : 对应yolov8_n
+    #                   s : 对应yolov8_s
+    #                   m : 对应yolov8_m
+    #                   l : 对应yolov8_l
+    #                   x : 对应yolov8_x
     #------------------------------------------------------#
     phi             = 's'
     #----------------------------------------------------------------------------------------------------------------------------#
@@ -266,7 +263,6 @@ if __name__ == "__main__":
     #   获取classes和anchor
     #------------------------------------------------------#
     class_names, num_classes = get_classes(classes_path)
-    anchors, num_anchors     = get_anchors(anchors_path)
 
     #----------------------------------------------------#
     #   下载预训练权重
@@ -282,7 +278,7 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     #   创建yolo模型
     #------------------------------------------------------#
-    model = YoloBody(anchors_mask, num_classes, phi, pretrained=pretrained)
+    model = YoloBody(input_shape, num_classes, phi, pretrained=pretrained)
     if not pretrained:
         weights_init(model)
     if model_path != '':
@@ -376,7 +372,7 @@ if __name__ == "__main__":
 
     if local_rank == 0:
         show_config(
-            classes_path = classes_path, anchors_path = anchors_path, anchors_mask = anchors_mask, model_path = model_path, input_shape = input_shape, \
+            classes_path = classes_path, model_path = model_path, input_shape = input_shape, \
             Init_Epoch = Init_Epoch, Freeze_Epoch = Freeze_Epoch, UnFreeze_Epoch = UnFreeze_Epoch, Freeze_batch_size = Freeze_batch_size, Unfreeze_batch_size = Unfreeze_batch_size, Freeze_Train = Freeze_Train, \
             Init_lr = Init_lr, Min_lr = Min_lr, optimizer_type = optimizer_type, momentum = momentum, lr_decay_type = lr_decay_type, \
             save_period = save_period, save_dir = save_dir, num_workers = num_workers, num_train = num_train, num_val = num_val
@@ -466,9 +462,9 @@ if __name__ == "__main__":
         #---------------------------------------#
         #   构建数据集加载器。
         #---------------------------------------#
-        train_dataset   = YoloDataset(train_lines, input_shape, num_classes, anchors, anchors_mask, epoch_length=UnFreeze_Epoch, \
+        train_dataset   = YoloDataset(train_lines, input_shape, num_classes, epoch_length=UnFreeze_Epoch, \
                                         mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob, train=True, special_aug_ratio=special_aug_ratio)
-        val_dataset     = YoloDataset(val_lines, input_shape, num_classes, anchors, anchors_mask, epoch_length=UnFreeze_Epoch, \
+        val_dataset     = YoloDataset(val_lines, input_shape, num_classes, epoch_length=UnFreeze_Epoch, \
                                         mosaic=False, mixup=False, mosaic_prob=0, mixup_prob=0, train=False, special_aug_ratio=0)
         
         if distributed:
@@ -490,7 +486,7 @@ if __name__ == "__main__":
         #   记录eval的map曲线
         #----------------------#
         if local_rank == 0:
-            eval_callback   = EvalCallback(model, input_shape, anchors, anchors_mask, class_names, num_classes, val_lines, log_dir, Cuda, \
+            eval_callback   = EvalCallback(model, input_shape, class_names, num_classes, val_lines, log_dir, Cuda, \
                                             eval_flag=eval_flag, period=eval_period)
         else:
             eval_callback   = None

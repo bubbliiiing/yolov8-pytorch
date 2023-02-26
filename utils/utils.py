@@ -41,17 +41,6 @@ def get_classes(classes_path):
     return class_names, len(class_names)
 
 #---------------------------------------------------#
-#   获得先验框
-#---------------------------------------------------#
-def get_anchors(anchors_path):
-    '''loads the anchors from a file'''
-    with open(anchors_path, encoding='utf-8') as f:
-        anchors = f.readline()
-    anchors = [float(x) for x in anchors.split(',')]
-    anchors = np.array(anchors).reshape(-1, 2)
-    return anchors, len(anchors)
-
-#---------------------------------------------------#
 #   获得学习率
 #---------------------------------------------------#
 def get_lr(optimizer):
@@ -76,8 +65,11 @@ def download_weights(phi, model_dir="./model_data"):
     from torch.hub import load_state_dict_from_url
     
     download_urls = {
-        "l" : 'https://github.com/bubbliiiing/yolov7-pytorch/releases/download/v1.0/yolov7_backbone_weights.pth',
-        "x" : 'https://github.com/bubbliiiing/yolov7-pytorch/releases/download/v1.0/yolov7_x_backbone_weights.pth',
+        "n" : 'https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_n_backbone_weights.pth',
+        "s" : 'https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_s_backbone_weights.pth',
+        "m" : 'https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_m_backbone_weights.pth',
+        "l" : 'https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_l_backbone_weights.pth',
+        "x" : 'https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_x_backbone_weights.pth',
     }
     url = download_urls[phi]
     

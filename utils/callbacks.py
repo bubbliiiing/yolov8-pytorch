@@ -26,11 +26,11 @@ class LossHistory():
         
         os.makedirs(self.log_dir)
         self.writer     = SummaryWriter(self.log_dir)
-        try:
-            dummy_input     = torch.randn(2, 3, input_shape[0], input_shape[1])
-            self.writer.add_graph(model, dummy_input)
-        except:
-            pass
+        # try:
+        #     dummy_input     = torch.randn(2, 3, input_shape[0], input_shape[1])
+        #     self.writer.add_graph(model, dummy_input)
+        # except:
+        #     pass
 
     def append_loss(self, epoch, loss, val_loss):
         if not os.path.exists(self.log_dir):
@@ -78,14 +78,12 @@ class LossHistory():
         plt.close("all")
 
 class EvalCallback():
-    def __init__(self, net, input_shape, anchors, anchors_mask, class_names, num_classes, val_lines, log_dir, cuda, \
+    def __init__(self, net, input_shape, class_names, num_classes, val_lines, log_dir, cuda, \
             map_out_path=".temp_map_out", max_boxes=100, confidence=0.05, nms_iou=0.5, letterbox_image=True, MINOVERLAP=0.5, eval_flag=True, period=1):
         super(EvalCallback, self).__init__()
         
         self.net                = net
         self.input_shape        = input_shape
-        self.anchors            = anchors
-        self.anchors_mask       = anchors_mask
         self.class_names        = class_names
         self.num_classes        = num_classes
         self.val_lines          = val_lines

@@ -10,10 +10,10 @@ if __name__ == "__main__":
     input_shape     = [640, 640]
     anchors_mask    = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
     num_classes     = 80
-    phi             = 'l'
+    phi             = 's'
     
     device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    m       = YoloBody(anchors_mask, num_classes, phi, False).to(device)
+    m       = YoloBody(input_shape, num_classes, phi, False).to(device)
     for i in m.children():
         print(i)
         print('==============================')

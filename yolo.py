@@ -8,7 +8,7 @@ import torch.nn as nn
 from PIL import ImageDraw, ImageFont
 
 from nets.yolo import YoloBody
-from utils.utils import (cvtColor, get_anchors, get_classes, preprocess_input,
+from utils.utils import (cvtColor, get_classes, preprocess_input,
                          resize_image, show_config)
 from utils.utils_bbox import DecodeBox
 
@@ -28,19 +28,16 @@ class YOLO(object):
         "model_path"        : 'model_data/yolov8_s.pth',
         "classes_path"      : 'model_data/coco_classes.txt',
         #---------------------------------------------------------------------#
-        #   anchors_path代表先验框对应的txt文件，一般不修改。
-        #   anchors_mask用于帮助代码找到对应的先验框，一般不修改。
-        #---------------------------------------------------------------------#
-        "anchors_path"      : 'model_data/yolo_anchors.txt',
-        "anchors_mask"      : [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
-        #---------------------------------------------------------------------#
         #   输入图片的大小，必须为32的倍数。
         #---------------------------------------------------------------------#
         "input_shape"       : [640, 640],
         #------------------------------------------------------#
-        #   所使用到的yolov7的版本，本仓库一共提供两个：
-        #   l : 对应yolov7
-        #   x : 对应yolov7_x
+        #   所使用到的yolov8的版本：
+        #   n : 对应yolov8_n
+        #   s : 对应yolov8_s
+        #   m : 对应yolov8_m
+        #   l : 对应yolov8_l
+        #   x : 对应yolov8_x
         #------------------------------------------------------#
         "phi"               : 's',
         #---------------------------------------------------------------------#
@@ -83,7 +80,6 @@ class YOLO(object):
         #   获得种类和先验框的数量
         #---------------------------------------------------#
         self.class_names, self.num_classes  = get_classes(self.classes_path)
-        self.anchors, self.num_anchors      = get_anchors(self.anchors_path)
         self.bbox_util                      = DecodeBox(self.num_classes, (self.input_shape[0], self.input_shape[1]))
 
         #---------------------------------------------------#
@@ -103,7 +99,8 @@ class YOLO(object):
         #---------------------------------------------------#
         #   建立yolo模型，载入yolo模型的权重
         #---------------------------------------------------#
-        self.net    = YoloBody(self.anchors_mask, self.num_classes, self.phi)
+        self.net    = YoloBody(self.input_shape, self.num_classes, self.phi)
+        
         device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.net.load_state_dict(torch.load(self.model_path, map_location=device))
         self.net    = self.net.fuse().eval()
