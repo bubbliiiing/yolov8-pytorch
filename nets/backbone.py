@@ -83,27 +83,27 @@ class Backbone(nn.Module):
     def __init__(self, base_channels, base_depth, deep_mul, phi, pretrained=False):
         super().__init__()
         #-----------------------------------------------#
-        #   输入图片是640, 640, 3
+        #   输入图片是3, 640, 640
         #-----------------------------------------------#
-        # 640, 640, 3 => 640, 640, 32 => 320, 320, 64
+        # 3, 640, 640 => 32, 640, 640 => 64, 320, 320
         self.stem = Conv(3, base_channels, 3, 2)
         
-        # 320, 320, 64 => 160, 160, 128 => 160, 160, 128
+        # 64, 320, 320 => 128, 160, 160 => 128, 160, 160
         self.dark2 = nn.Sequential(
             Conv(base_channels, base_channels * 2, 3, 2),
             C2f(base_channels * 2, base_channels * 2, base_depth, True),
         )
-        # 160, 160, 128 => 80, 80, 256 => 80, 80, 256
+        # 128, 160, 160 => 256, 80, 80 => 256, 80, 80
         self.dark3 = nn.Sequential(
             Conv(base_channels * 2, base_channels * 4, 3, 2),
             C2f(base_channels * 4, base_channels * 4, base_depth * 2, True),
         )
-        # 80, 80, 256 => 40, 40, 512 => 40, 40, 512
+        # 256, 80, 80 => 512, 40, 40 => 512, 40, 40
         self.dark4 = nn.Sequential(
             Conv(base_channels * 4, base_channels * 8, 3, 2),
             C2f(base_channels * 8, base_channels * 8, base_depth * 2, True),
         )
-        # 40, 40, 512 => 20, 20, 1024 * deep_mul => 20, 20, 1024 * deep_mul
+        # 512, 40, 40 => 1024 * deep_mul, 20, 20 => 1024 * deep_mul, 20, 20
         self.dark5 = nn.Sequential(
             Conv(base_channels * 8, int(base_channels * 16 * deep_mul), 3, 2),
             C2f(int(base_channels * 16 * deep_mul), int(base_channels * 16 * deep_mul), base_depth, True),
@@ -126,17 +126,17 @@ class Backbone(nn.Module):
         x = self.stem(x)
         x = self.dark2(x)
         #-----------------------------------------------#
-        #   dark3的输出为80, 80, 256，是一个有效特征层
+        #   dark3的输出为256, 80, 80，是一个有效特征层
         #-----------------------------------------------#
         x = self.dark3(x)
         feat1 = x
         #-----------------------------------------------#
-        #   dark4的输出为40, 40, 512，是一个有效特征层
+        #   dark4的输出为512, 40, 40，是一个有效特征层
         #-----------------------------------------------#
         x = self.dark4(x)
         feat2 = x
         #-----------------------------------------------#
-        #   dark5的输出为20, 20, 1024 * deep_mul，是一个有效特征层
+        #   dark5的输出为1024 * deep_mul, 20, 20，是一个有效特征层
         #-----------------------------------------------#
         x = self.dark5(x)
         feat3 = x

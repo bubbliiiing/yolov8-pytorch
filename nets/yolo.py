@@ -60,34 +60,34 @@ class YoloBody(nn.Module):
         base_channels       = int(wid_mul * 64)  # 64
         base_depth          = max(round(dep_mul * 3), 1)  # 3
         #-----------------------------------------------#
-        #   输入图片是640, 640, 3
+        #   输入图片是3, 640, 640
         #-----------------------------------------------#
 
         #---------------------------------------------------#   
         #   生成主干模型
         #   获得三个有效特征层，他们的shape分别是：
-        #   80, 80, 256
-        #   40, 40, 512
-        #   20, 20, 1024 * deep_mul
+        #   256, 80, 80
+        #   512, 40, 40
+        #   1024 * deep_mul, 20, 20
         #---------------------------------------------------#
         self.backbone   = Backbone(base_channels, base_depth, deep_mul, phi, pretrained=pretrained)
 
         #------------------------加强特征提取网络------------------------# 
         self.upsample   = nn.Upsample(scale_factor=2, mode="nearest")
 
-        # 40, 40, 1024 * deep_mul + 512 => 40, 40, 512
+        # 1024 * deep_mul + 512, 40, 40 => 512, 40, 40
         self.conv3_for_upsample1    = C2f(int(base_channels * 16 * deep_mul) + base_channels * 8, base_channels * 8, base_depth, shortcut=False)
-        # 80, 80, 768 => 80, 80, 256
+        # 768, 80, 80 => 256, 80, 80
         self.conv3_for_upsample2    = C2f(base_channels * 8 + base_channels * 4, base_channels * 4, base_depth, shortcut=False)
         
-        # 80, 80, 256 => 40, 40, 256
+        # 256, 80, 80 => 256, 40, 40
         self.down_sample1           = Conv(base_channels * 4, base_channels * 4, 3, 2)
-        # 40, 40, 512 + 256 => 40, 40, 512
+        # 512 + 256, 40, 40 => 512, 40, 40
         self.conv3_for_downsample1  = C2f(base_channels * 8 + base_channels * 4, base_channels * 8, base_depth, shortcut=False)
 
-        # 40, 40, 512 => 20, 20, 512
+        # 512, 40, 40 => 512, 20, 20
         self.down_sample2           = Conv(base_channels * 8, base_channels * 8, 3, 2)
-        # 20, 20, 1024 * deep_mul + 512 => 20, 20, 1024 * deep_mul
+        # 1024 * deep_mul + 512, 20, 20 =>  1024 * deep_mul, 20, 20
         self.conv3_for_downsample2  = C2f(int(base_channels * 16 * deep_mul) + base_channels * 8, int(base_channels * 16 * deep_mul), base_depth, shortcut=False)
         #------------------------加强特征提取网络------------------------# 
         
@@ -120,42 +120,42 @@ class YoloBody(nn.Module):
         feat1, feat2, feat3 = self.backbone.forward(x)
         
         #------------------------加强特征提取网络------------------------# 
-        # 20, 20, 1024 * deep_mul => 40, 40, 1024 * deep_mul
+        # 1024 * deep_mul, 20, 20 => 1024 * deep_mul, 40, 40
         P5_upsample = self.upsample(feat3)
-        # 40, 40, 1024 * deep_mul cat 40, 40, 512 => 40, 40, 1024 * deep_mul + 512
+        # 1024 * deep_mul, 40, 40 cat 512, 40, 40 => 1024 * deep_mul + 512, 40, 40
         P4          = torch.cat([P5_upsample, feat2], 1)
-        # 40, 40, 1024 * deep_mul + 512 => 40, 40, 512
+        # 1024 * deep_mul + 512, 40, 40 => 512, 40, 40
         P4          = self.conv3_for_upsample1(P4)
 
-        # 40, 40, 512 => 80, 80, 512
+        # 512, 40, 40 => 512, 80, 80
         P4_upsample = self.upsample(P4)
-        # 80, 80, 512 cat 80, 80, 256 => 80, 80, 768
+        # 512, 80, 80 cat 256, 80, 80 => 768, 80, 80
         P3          = torch.cat([P4_upsample, feat1], 1)
-        # 80, 80, 768 => 80, 80, 256
+        # 768, 80, 80 => 256, 80, 80
         P3          = self.conv3_for_upsample2(P3)
 
-        # 80, 80, 256 => 40, 40, 256
+        # 256, 80, 80 => 256, 40, 40
         P3_downsample = self.down_sample1(P3)
-        # 40, 40, 512 cat 40, 40, 256 => 40, 40, 768
+        # 512, 40, 40 cat 256, 40, 40 => 768, 40, 40
         P4 = torch.cat([P3_downsample, P4], 1)
-        # 40, 40, 768 => 40, 40, 512
+        # 768, 40, 40 => 512, 40, 40
         P4 = self.conv3_for_downsample1(P4)
 
-        # 40, 40, 512 => 20, 20, 512
+        # 512, 40, 40 => 512, 20, 20
         P4_downsample = self.down_sample2(P4)
-        # 20, 20, 512 cat 20, 20, 1024 * deep_mul => 20, 20, 1024 * deep_mul + 512
+        # 512, 20, 20 cat 1024 * deep_mul, 20, 20 => 1024 * deep_mul + 512, 20, 20
         P5 = torch.cat([P4_downsample, feat3], 1)
-        # 20, 20, 1024 * deep_mul + 512 => 20, 20, 1024 * deep_mul
+        # 1024 * deep_mul + 512, 20, 20 => 1024 * deep_mul, 20, 20
         P5 = self.conv3_for_downsample2(P5)
         #------------------------加强特征提取网络------------------------# 
-        # P3 80, 80, 256 
-        # P4 40, 40, 512
-        # P5 20, 20, 1024 * deep_mul
+        # P3 256, 80, 80
+        # P4 512, 40, 40
+        # P5 1024 * deep_mul, 20, 20
         shape = P3.shape  # BCHW
         
-        # P3 80, 80, 256 => 80, 80, num_classes + self.reg_max * 4
-        # P4 40, 40, 512 => 40, 40, num_classes + self.reg_max * 4
-        # P5 20, 20, 1024 * deep_mul => 20, 20, num_classes + self.reg_max * 4
+        # P3 256, 80, 80 => num_classes + self.reg_max * 4, 80, 80
+        # P4 512, 40, 40 => num_classes + self.reg_max * 4, 40, 40
+        # P5 1024 * deep_mul, 20, 20 => num_classes + self.reg_max * 4, 20, 20
         x = [P3, P4, P5]
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
@@ -164,8 +164,8 @@ class YoloBody(nn.Module):
             self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
         
-        # 8400, num_classes + self.reg_max * 4  =>  cls 8400, num_classes; 
-        #                                           box 8400, self.reg_max * 4
+        # num_classes + self.reg_max * 4 , 8400 =>  cls num_classes, 8400; 
+        #                                           box self.reg_max * 4, 8400
         box, cls        = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2).split((self.reg_max * 4, self.num_classes), 1)
         # origin_cls      = [xi.split((self.reg_max * 4, self.num_classes), 1)[1] for xi in x]
         dbox            = self.dfl(box)
