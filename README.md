@@ -1,4 +1,4 @@
-## YOLOV7：You Only Look Once目标检测模型在pytorch当中的实现
+## YOLOV8：You Only Look Once目标检测模型在pytorch当中的实现
 ---
 
 ## 目录
@@ -13,7 +13,7 @@
 9. [参考资料 Reference](#Reference)
 
 ## Top News
-**`2022-07`**:**仓库创建，支持step、cos学习率下降法、支持adam、sgd优化器选择、支持学习率根据batch_size自适应调整、新增图片裁剪、支持多GPU训练、支持各个种类目标数量计算、支持heatmap、支持EMA。**  
+**`2023-03`**:**仓库创建，支持step、cos学习率下降法、支持adam、sgd优化器选择、支持学习率根据batch_size自适应调整、新增图片裁剪、支持多GPU训练、支持各个种类目标数量计算、支持heatmap、支持EMA。**  
 
 ## 相关仓库
 | 模型 | 路径 |
@@ -32,8 +32,11 @@ YoloV7-tiny | https://github.com/bubbliiiing/yolov7-tiny-pytorch
 ## 性能情况
 | 训练数据集 | 权值文件名称 | 测试数据集 | 输入图片大小 | mAP 0.5:0.95 | mAP 0.5 |
 | :-----: | :-----: | :------: | :------: | :------: | :-----: |
-| COCO-Train2017 | [yolov7_weights.pth](https://github.com/bubbliiiing/yolov7-pytorch/releases/download/v1.0/yolov7_weights.pth) | COCO-Val2017 | 640x640 | 50.7 | 69.2
-| COCO-Train2017 | [yolov7_x_weights.pth](https://github.com/bubbliiiing/yolov7-pytorch/releases/download/v1.0/yolov7_x_weights.pth) | COCO-Val2017 | 640x640 | 52.4 | 70.5
+| COCO-Train2017 | [yolov8_n.pth](https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_n.pth) | COCO-Val2017 | 640x640 | 36.7 | 52.1
+| COCO-Train2017 | [yolov8_s.pth](https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_s.pth) | COCO-Val2017 | 640x640 | 44.1 | 61.0
+| COCO-Train2017 | [yolov8_m.pth](https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_m.pth) | COCO-Val2017 | 640x640 | 49.3 | 66.3
+| COCO-Train2017 | [yolov8_l.pth](https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_l.pth) | COCO-Val2017 | 640x640 | 52.0 | 68.9
+| COCO-Train2017 | [yolov8_x.pth](https://github.com/bubbliiiing/yolov8-pytorch/releases/download/v1.0/yolov8_x.pth) | COCO-Val2017 | 640x640 | 52.9 | 69.9
 
 ## 所需环境
 torch==1.2.0    
@@ -41,8 +44,8 @@ torch==1.2.0
 
 ## 文件下载
 训练所需的权值可在百度网盘中下载。  
-链接: https://pan.baidu.com/s/1uYpjWC1uOo3Q-klpUEy9LQ     
-提取码: pmua    
+链接: https://pan.baidu.com/s/1-khkEUiH-J3YJHVaYuuVbw      
+提取码: ss9t     
 
 VOC数据集下载地址如下，里面已经包括了训练集、测试集、验证集（与测试集一样），无需再次划分：  
 链接: https://pan.baidu.com/s/19Mw2u_df_nBzsC2lg20fQA    
@@ -114,7 +117,7 @@ _defaults = {
     #   验证集损失较低不代表mAP较高，仅代表该权值在验证集上泛化性能较好。
     #   如果出现shape不匹配，同时要注意训练时的model_path和classes_path参数的修改
     #--------------------------------------------------------------------------#
-    "model_path"        : 'model_data/yolov7_weights.pth',
+    "model_path"        : 'model_data/yolov8_s.pth',
     "classes_path"      : 'model_data/coco_classes.txt',
     #---------------------------------------------------------------------#
     #   anchors_path代表先验框对应的txt文件，一般不修改。
@@ -127,11 +130,14 @@ _defaults = {
     #---------------------------------------------------------------------#
     "input_shape"       : [640, 640],
     #------------------------------------------------------#
-    #   所使用到的yolov7的版本，本仓库一共提供两个：
-    #   l : 对应yolov7
-    #   x : 对应yolov7_x
+    #   所使用到的yolov8的版本：
+    #   n : 对应yolov8_n
+    #   s : 对应yolov8_s
+    #   m : 对应yolov8_m
+    #   l : 对应yolov8_l
+    #   x : 对应yolov8_x
     #------------------------------------------------------#
-    "phi"               : 'l',
+    "phi"               : 's',
     #---------------------------------------------------------------------#
     #   只有得分大于置信度的预测框会被保留下来
     #---------------------------------------------------------------------#
@@ -172,4 +178,4 @@ img/street.jpg
 5. 运行get_map.py即可获得评估结果，评估结果会保存在map_out文件夹中。
 
 ## Reference
-https://github.com/WongKinYiu/yolov7
+https://github.com/ultralytics/ultralytics
