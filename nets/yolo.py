@@ -43,6 +43,7 @@ class DFL(nn.Module):
         # bs, self.reg_max * 4, 8400
         b, c, a = x.shape
         # bs, 4, self.reg_max, 8400 => bs, self.reg_max, 4, 8400 => b, 4, 8400
+        # 以softmax的方式，对0~16的数字计算百分比，获得最终数字。
         return self.conv(x.view(b, 4, self.c1, a).transpose(2, 1).softmax(1)).view(b, 4, a)
         # return self.conv(x.view(b, self.c1, 4, a).softmax(1)).view(b, 4, a)
         
