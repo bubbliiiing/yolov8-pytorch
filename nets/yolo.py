@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from nets.backbone import Backbone, C2f, Conv, SiLU, autopad
+from nets.backbone import Backbone, C2f, Conv
+from nets.yolo_training import weights_init
 from utils.utils_bbox import make_anchors
 
 def fuse_conv_and_bn(conv, bn):
@@ -104,6 +105,8 @@ class YoloBody(nn.Module):
         c2, c3   = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], num_classes)  # channels
         self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
         self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, num_classes, 1)) for x in ch)
+        if not pretrained:
+            weights_init(self)
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
 
